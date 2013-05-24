@@ -13,7 +13,7 @@ namespace ReferenceCheck
     {
         public static bool printReferences = false;
         public static bool PrintAsOneliners = false;
-        public static bool checkDirectory = false;
+        public static bool checkSingleFile = false;
         public static string targetPath;
         public static int totalInvalids = 0;
         public static List<string> invalidProjects = new List<string>();
@@ -33,19 +33,19 @@ namespace ReferenceCheck
                 Console.WriteLine("\nReference checker");
                 Console.WriteLine("\nUsage: ");
                 Console.WriteLine("\tReferenceCheck [file/directory] flags");
-                Console.WriteLine("\nFlags:\n\t-l\tList all references\n\t-lo\tList all references as one liners\n\t-d\tUse in directory mode");
+                Console.WriteLine("\nFlags:\n\t-l\tList all references\n\t-lo\tList all references as one liners\n\t-f\tUse in single file mode");
                 
                 System.Environment.Exit(-1);
             }
 
             // Checking if we should process directory or file
-            if (checkDirectory)
+            if (checkSingleFile)
             {
-                ProcessDirectory(targetPath);
+                ProcessFile(targetPath);
             }
             else
             {
-                ProcessFile(targetPath);
+                ProcessDirectory(targetPath);
             }
         }
 
@@ -60,10 +60,10 @@ namespace ReferenceCheck
 
             if (args.Contains("-l")) { printReferences = true; }
             if (args.Contains("-lo")) { PrintAsOneliners = true; printReferences = true; }
-            if (args.Contains("-d")) { checkDirectory = true; }
+            if (args.Contains("-f")) { checkSingleFile = true; }
 
             // Failing if file or directory does not exists
-            if (File.Exists(args[0]) || (Directory.Exists(args[0]) && checkDirectory ))
+            if (Directory.Exists(args[0]) || (File.Exists(args[0]) && checkSingleFile))
             {
                 targetPath = args[0];
             }
@@ -83,7 +83,7 @@ namespace ReferenceCheck
         {
             foreach (string d in Directory.GetDirectories(path))
             {
-                foreach (string file in Directory.EnumerateFiles(d, "*.csproj", SearchOption.AllDirectories))
+                foreach (string file in Directory.EnumerateFiles(d, "*.*", SearchOption.AllDirectories).Where(s => s.EndsWith(".csproj") || s.EndsWith("vbproj"))) // vbproj csproj 
                 {
                     ProcessFile(file);
                 }
@@ -98,6 +98,7 @@ namespace ReferenceCheck
             else
             {
                 Console.WriteLine("\nFound {0} reference error(s):", totalInvalids);
+                Console.WriteLine("\t(Project, Reference)");
                 foreach (string invalidProject in invalidProjects)
                 {
                     Console.WriteLine("\t{0}", invalidProject);
